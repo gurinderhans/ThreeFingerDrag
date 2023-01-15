@@ -9,8 +9,8 @@ namespace tfd
     {
         private readonly double DragSpeedMultiplier;
         private readonly double DragStartFingersApartDistThreshold;
-        private readonly double DragVelocityMinThreshold;
-        private readonly double DragVelocityMaxThreshold;
+        private readonly double DragVelocityUpperBoundX;
+        private readonly double DragVelocityUpperBoundY;
         private readonly double DragEndOnNewGestureMinDist;
         private readonly double DragEndOnNewGestureMaxDist;
         private readonly long DragEndMillisecondsThreshold;
@@ -34,15 +34,15 @@ namespace tfd
         {
             this.logger = appContext.GetLogger();
 
-            this.DragSpeedMultiplier = appContext.LoadEnvVar(nameof(this.DragSpeedMultiplier), 1f);
-            this.DragStartFingersApartDistThreshold = appContext.LoadEnvVar(nameof(this.DragStartFingersApartDistThreshold), 2f);
-            this.DragVelocityMaxThreshold = appContext.LoadEnvVar(nameof(this.DragVelocityMaxThreshold), 2f);
-            this.DragVelocityMinThreshold = appContext.LoadEnvVar(nameof(this.DragVelocityMinThreshold), 1f);
+            this.DragSpeedMultiplier = appContext.LoadEnvVar(nameof(this.DragSpeedMultiplier), 1.5f);
+            this.DragStartFingersApartDistThreshold = appContext.LoadEnvVar(nameof(this.DragStartFingersApartDistThreshold), 2.5f);
+            this.DragVelocityUpperBoundX = appContext.LoadEnvVar(nameof(this.DragVelocityUpperBoundX), 5f);
+            this.DragVelocityUpperBoundY = appContext.LoadEnvVar(nameof(this.DragVelocityUpperBoundY), 5f);
             this.DragEndOnNewGestureMinDist = appContext.LoadEnvVar(nameof(this.DragEndOnNewGestureMinDist), 0);
             this.DragEndOnNewGestureMaxDist = appContext.LoadEnvVar(nameof(this.DragEndOnNewGestureMaxDist), 100);
-            this.DragEndMillisecondsThreshold = appContext.LoadEnvVar(nameof(this.DragEndMillisecondsThreshold), 500);
-            this.DragEndConfidenceThreshold = appContext.LoadEnvVar(nameof(this.DragEndConfidenceThreshold), 2);
-            this.TimeSinceLast3fTouchMinMillis = appContext.LoadEnvVar(nameof(this.TimeSinceLast3fTouchMinMillis), 33);
+            this.DragEndMillisecondsThreshold = appContext.LoadEnvVar(nameof(this.DragEndMillisecondsThreshold), 1000);
+            this.DragEndConfidenceThreshold = appContext.LoadEnvVar(nameof(this.DragEndConfidenceThreshold), 5);
+            this.TimeSinceLast3fTouchMinMillis = appContext.LoadEnvVar(nameof(this.TimeSinceLast3fTouchMinMillis), 50);
             this.TrackpadCoordsDivByDenomSize = appContext.LoadEnvVar(nameof(this.TrackpadCoordsDivByDenomSize), 1);
 
             this.ScreenWidth = win32.GetSystemMetrics(win32.SM_CXSCREEN);
@@ -72,16 +72,16 @@ namespace tfd
             {
                 if (!this.isDragging)
                 {
-                    double[] distBetweenFingers = new[]
+                    double[] distBetween3Fingers = new[]
                     {
                         Utils.CalculateHypotenuse(contacts[0].X - contacts[1].X, contacts[0].Y - contacts[1].Y),
                         Utils.CalculateHypotenuse(contacts[0].X - contacts[2].X, contacts[0].Y - contacts[2].Y),
                         Utils.CalculateHypotenuse(contacts[1].X - contacts[2].X, contacts[1].Y - contacts[2].Y),
                     };
 
-                    if (distBetweenFingers.Max() > (distBetweenFingers.Min() * this.DragStartFingersApartDistThreshold))
+                    if (distBetween3Fingers.Max() > (distBetween3Fingers.Min() * this.DragStartFingersApartDistThreshold))
                     {
-                        this.logger.Debug($"3fingers far apart=({string.Join(",", distBetweenFingers)})");
+                        this.logger.Debug($"3fingers too far apart=({string.Join(",", distBetween3Fingers)})");
                         return;
                     }
 
@@ -109,13 +109,13 @@ namespace tfd
                     double deltaX = trackpadX - this.prevTrackpadX;
                     double deltaY = trackpadY - this.prevTrackpadY;
 
-                    // normalize distance since [velocity = dist / milliseconds]
+                    // velocity = dist / milliseconds
                     double velocityX = (deltaX * TimeSpan.TicksPerMillisecond) / timeClamped;
                     double velocityY = (deltaY * TimeSpan.TicksPerMillisecond) / timeClamped;
 
                     // clamp velocity & abs since deltaX/Y are signed
-                    velocityX = Math.Min(Math.Max(Math.Abs(velocityX), this.DragVelocityMinThreshold), this.DragVelocityMaxThreshold);
-                    velocityY = Math.Min(Math.Max(Math.Abs(velocityY), this.DragVelocityMinThreshold), this.DragVelocityMaxThreshold);
+                    velocityX = Math.Min(Math.Max(Math.Abs(velocityX), 1f), this.DragVelocityUpperBoundX);
+                    velocityY = Math.Min(Math.Max(Math.Abs(velocityY), 1f), this.DragVelocityUpperBoundY);
 
                     win32.GetCursorPos(out win32.MousePoint currPos);
                     currPos.X += (int)(deltaX * velocityX * this.DragSpeedMultiplier);

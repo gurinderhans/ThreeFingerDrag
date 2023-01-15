@@ -29,15 +29,16 @@ namespace tfd
             this.FormBorderStyle = FormBorderStyle.None;
             this.ShowInTaskbar = false;
             this.Opacity = 0;
-
             this.logger = context.GetLogger();
 
             bool EnableThreeFingerDrag = context.LoadEnvVar(nameof(EnableThreeFingerDrag), true);
             if (EnableThreeFingerDrag)
             {
                 this.tfDragManager = new ThreeFingerDragManager(context);
-                TrackpadHelper.RegisterTrackpad(this.Handle);
-                this.logger.Info("register trackpad");
+                if (TrackpadHelper.RegisterTrackpad(this.Handle))
+                    this.logger.Info("register trackpad success");
+                else
+                    this.logger.Error("error registering trackpad!");
             }
         }
 
@@ -45,7 +46,6 @@ namespace tfd
         {
             if (m.Msg == win32.WM_INPUT)
                 this.tfDragManager.ProcessInput(m.LParam);
-
             base.WndProc(ref m);
         }
     }
