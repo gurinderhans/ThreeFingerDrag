@@ -79,7 +79,10 @@ namespace tfd
                         Utils.CalculateHypotenuse(contacts[1].X - contacts[2].X, contacts[1].Y - contacts[2].Y),
                     };
 
-                    if (distBetween3Fingers.Max() > (distBetween3Fingers.Min() * this.DragStartFingersApartDistThreshold))
+                    /// NOTE: some trackpad drivers report 3rd finger location same as 2nd finger, ie. min dist = 0
+                    /// so we ensure min dist = 1, then we can set threshold to a high value to skip this check
+                    double minDist = Math.Max(1, distBetween3Fingers.Min());
+                    if (distBetween3Fingers.Max() > (minDist * this.DragStartFingersApartDistThreshold))
                     {
                         this.logger.Debug($"3fingers too far apart=({string.Join(",", distBetween3Fingers)})");
                         return;
