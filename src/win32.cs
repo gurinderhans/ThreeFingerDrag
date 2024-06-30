@@ -36,6 +36,7 @@ namespace tfd
 
     public partial class win32
     {
+        public const int WS_EX_TOOLWINDOW = 0x80;
         public const int WM_INPUT = 0x00FF;
         public const int RIM_INPUT = 0;
         public const int RIM_INPUTSINK = 1;

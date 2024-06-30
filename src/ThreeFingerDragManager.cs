@@ -8,21 +8,19 @@ namespace tfd
     public class ThreeFingerDragManager
     {
         private readonly double DragSpeedMultiplier;
-        private readonly double DragStartFingersApartDistThreshold;
         private readonly double DragVelocityUpperBoundX;
         private readonly double DragVelocityUpperBoundY;
         private readonly double DragEndOnNewGestureMinDist;
         private readonly double DragEndOnNewGestureMaxDist;
+        private readonly double DragStartFingersDistThresholdMultiplier;
         private readonly long DragEndMillisecondsThreshold;
         private readonly int DragEndConfidenceThreshold;
         private readonly int TimeSinceLast3fTouchMinMillis;
         private readonly int TrackpadCoordsDivByDenomSize;
 
-        private readonly int ScreenWidth;
-        private readonly int ScreenHeight;
-        private readonly Timer monitorThreeFingersOnTrackpad = new Timer(100);
+        private readonly Timer monitor3fOnTrackpad = new Timer(100);
         private readonly Stopwatch timeSincePrev3fTouchWatch = new Stopwatch();
-        private readonly ILogger logger;
+        private readonly ILogger Logger;
 
         private bool isDragging = false;
         private int dragEndConfidence = 0;
@@ -32,41 +30,35 @@ namespace tfd
 
         public ThreeFingerDragManager(IContext appContext)
         {
-            this.logger = appContext.GetLogger();
-
+            this.Logger = appContext.GetLogger();
             this.DragSpeedMultiplier = appContext.LoadEnvVar(nameof(this.DragSpeedMultiplier), 1.5f);
-            this.DragStartFingersApartDistThreshold = appContext.LoadEnvVar(nameof(this.DragStartFingersApartDistThreshold), 2.5f);
-            this.DragVelocityUpperBoundX = appContext.LoadEnvVar(nameof(this.DragVelocityUpperBoundX), 5f);
-            this.DragVelocityUpperBoundY = appContext.LoadEnvVar(nameof(this.DragVelocityUpperBoundY), 5f);
+            this.DragVelocityUpperBoundX = appContext.LoadEnvVar(nameof(this.DragVelocityUpperBoundX), 1.3f);
+            this.DragVelocityUpperBoundY = appContext.LoadEnvVar(nameof(this.DragVelocityUpperBoundY), 1.2f);
             this.DragEndOnNewGestureMinDist = appContext.LoadEnvVar(nameof(this.DragEndOnNewGestureMinDist), 0);
             this.DragEndOnNewGestureMaxDist = appContext.LoadEnvVar(nameof(this.DragEndOnNewGestureMaxDist), 100);
+            this.DragStartFingersDistThresholdMultiplier = appContext.LoadEnvVar(nameof(this.DragStartFingersDistThresholdMultiplier), 2.5f);
             this.DragEndMillisecondsThreshold = appContext.LoadEnvVar(nameof(this.DragEndMillisecondsThreshold), 1000);
             this.DragEndConfidenceThreshold = appContext.LoadEnvVar(nameof(this.DragEndConfidenceThreshold), 5);
             this.TimeSinceLast3fTouchMinMillis = appContext.LoadEnvVar(nameof(this.TimeSinceLast3fTouchMinMillis), 50);
-            this.TrackpadCoordsDivByDenomSize = appContext.LoadEnvVar(nameof(this.TrackpadCoordsDivByDenomSize), 1);
-
-            this.ScreenWidth = win32.GetSystemMetrics(win32.SM_CXSCREEN);
-            this.ScreenHeight = win32.GetSystemMetrics(win32.SM_CYSCREEN);
-
-            this.monitorThreeFingersOnTrackpad.Elapsed += this.CheckIfThreeFingersStillOnTrackpadHandler;
+            this.TrackpadCoordsDivByDenomSize = appContext.LoadEnvVar(nameof(this.TrackpadCoordsDivByDenomSize), 0);
+            this.monitor3fOnTrackpad.Elapsed += this.CheckIf3fOnTrackpadHandler;
         }
 
-        public void ProcessInput(IntPtr lParam)
+        public void ProcessTouch(IntPtr lParam)
         {
             TrackpadContact[] contacts = TrackpadHelper.ParseInput(lParam);
             if (contacts == null || contacts.Length == 0) return;
 
-            // get approx. mean of all three fingers contact position
-            double trackpadX = contacts[0].X;
-            double trackpadY = contacts[0].Y;
-            for (int i = 1; i < contacts.Length; ++i)
+            /// calculate avg. location of all three contacts
+            double trackpadX = 0, trackpadY = 0;
+            for (int i = 0; i < contacts.Length; ++i)
             {
                 trackpadX += contacts[i].X;
                 trackpadY += contacts[i].Y;
             }
-            int divByDenomSizeClamped = Math.Max(1, contacts.Length + this.TrackpadCoordsDivByDenomSize);
-            trackpadX = Math.Ceiling(trackpadX / divByDenomSizeClamped);
-            trackpadY = Math.Ceiling(trackpadY / divByDenomSizeClamped);
+            int contactsDivBy = contacts.Length + this.TrackpadCoordsDivByDenomSize;
+            trackpadX = Math.Ceiling(trackpadX / contactsDivBy);
+            trackpadY = Math.Ceiling(trackpadY / contactsDivBy);
 
             if (contacts.Length == 3)
             {
@@ -79,57 +71,45 @@ namespace tfd
                         Utils.CalculateHypotenuse(contacts[1].X - contacts[2].X, contacts[1].Y - contacts[2].Y),
                     };
 
-                    /// NOTE: some trackpad drivers report 3rd finger location same as 2nd finger, ie. min dist = 0
-                    /// so we ensure min dist = 1, then we can set threshold to a high value to skip this check
-                    double minDist = Math.Max(1, distBetween3Fingers.Min());
-                    if (distBetween3Fingers.Max() > (minDist * this.DragStartFingersApartDistThreshold))
+                    /// 'LG Gram 17' trackpad drivers report 3rd finger location same as 2nd finger location,
+                    /// ie. min dist = 0, we ensure min dist = 1 to allow high threshold value to skip this check
+                    double minDistClamped = Math.Max(1, distBetween3Fingers.Min());
+
+                    /// make comparison of finger distances relative to other fingers
+                    /// this takes into account users natural finger distance preference
+                    if (distBetween3Fingers.Max() > (minDistClamped * this.DragStartFingersDistThresholdMultiplier))
                     {
-                        this.logger.Debug($"3fingers too far apart=({string.Join(",", distBetween3Fingers)})");
+                        this.Logger.Debug($"3 fingers too far apart=({string.Join(",", distBetween3Fingers)})");
                         return;
                     }
 
-                    win32.GetCursorPos(out win32.MousePoint currPos);
-                    win32.mouse_event(
-                        win32.MOUSEEVENTF_LEFTDOWN | win32.MOUSEEVENTF_MOVE | win32.MOUSEEVENTF_ABSOLUTE,
-                        Utils.TranslateCoordToAbsolute(currPos.X, this.ScreenWidth),
-                        Utils.TranslateCoordToAbsolute(currPos.Y, this.ScreenHeight),
-                        0,
-                        0);
-
-                    this.monitorThreeFingersOnTrackpad.Start();
+                    win32.mouse_event(win32.MOUSEEVENTF_LEFTDOWN | win32.MOUSEEVENTF_MOVE, 0, 0, 0, 0);
+                    this.monitor3fOnTrackpad.Start();
                     this.isDragging = true;
                 }
 
-                /// since Tip Switch is not reported, we have to track passed time to see when touch leaves
-                /// trackpad and comes back. when it comes back, we record position of first touch and move
-                /// cursor when second touch happens so we have relative positioning computed correctly
-                long last3fTime = this.timeSincePrev3fTouchWatch.ElapsedTicks;
+                /// TipSwitch isn't reported, so we track elapsed time to check when touch leaves & returns.
+                /// when it returns, we record position of first touch and only move cursor when second touch
+                /// occurs so relative positioning is computed correctly
+                long last3fTouchTime = this.timeSincePrev3fTouchWatch.ElapsedTicks;
                 if (this.timeSincePrev3fTouchWatch.IsRunning
-                    && last3fTime < this.TimeSinceLast3fTouchMinMillis * TimeSpan.TicksPerMillisecond)
+                    && last3fTouchTime < this.TimeSinceLast3fTouchMinMillis * TimeSpan.TicksPerMillisecond)
                 {
-                    long timeClamped = Math.Max(1, last3fTime);
-
                     double deltaX = trackpadX - this.prevTrackpadX;
                     double deltaY = trackpadY - this.prevTrackpadY;
 
-                    // velocity = dist / milliseconds
-                    double velocityX = (deltaX * TimeSpan.TicksPerMillisecond) / timeClamped;
-                    double velocityY = (deltaY * TimeSpan.TicksPerMillisecond) / timeClamped;
+                    /// velocity = dist / milliseconds; ensure time != 0
+                    long timeClamped = Math.Max(1, last3fTouchTime / TimeSpan.TicksPerMillisecond);
+                    double velocityX = deltaX / timeClamped;
+                    double velocityY = deltaY / timeClamped;
 
-                    // clamp velocity & abs since deltaX/Y are signed
+                    /// clamp velocity b/w custom threshold
                     velocityX = Math.Min(Math.Max(Math.Abs(velocityX), 1f), this.DragVelocityUpperBoundX);
                     velocityY = Math.Min(Math.Max(Math.Abs(velocityY), 1f), this.DragVelocityUpperBoundY);
 
-                    win32.GetCursorPos(out win32.MousePoint currPos);
-                    currPos.X += (int)(deltaX * velocityX * this.DragSpeedMultiplier);
-                    currPos.Y += (int)(deltaY * velocityY * this.DragSpeedMultiplier);
-
-                    win32.mouse_event(
-                        win32.MOUSEEVENTF_MOVE | win32.MOUSEEVENTF_ABSOLUTE,
-                        Utils.TranslateCoordToAbsolute(currPos.X, this.ScreenWidth),
-                        Utils.TranslateCoordToAbsolute(currPos.Y, this.ScreenHeight),
-                        0,
-                        0);
+                    int dX = (int)(deltaX * velocityX * this.DragSpeedMultiplier);
+                    int dY = (int)(deltaY * velocityY * this.DragSpeedMultiplier);
+                    win32.mouse_event(win32.MOUSEEVENTF_MOVE, dX, dY, 0, 0);
                 }
 
                 this.dragEndConfidence = 0;
@@ -142,14 +122,14 @@ namespace tfd
                     double deltaX = trackpadX - this.prevTrackpadX;
                     double deltaY = trackpadY - this.prevTrackpadY;
                     double dist = Utils.CalculateHypotenuse(deltaX, deltaY);
-                    this.logger.Debug($"DIST={dist}");
+                    this.Logger.Debug($"moved dist={dist}");
 
                     if (this.DragEndOnNewGestureMinDist < dist && dist < this.DragEndOnNewGestureMaxDist)
                     {
                         if (++this.dragEndConfidence > this.DragEndConfidenceThreshold)
                         {
                             this.StopDrag();
-                            this.logger.Debug($"new gesture, stopping drag");
+                            this.Logger.Debug($"new gesture, stop drag");
                         }
                     }
                     else
@@ -171,15 +151,8 @@ namespace tfd
         private void StopDrag()
         {
             this.isDragging = false;
-            this.monitorThreeFingersOnTrackpad.Stop();
-
-            win32.GetCursorPos(out win32.MousePoint currPos);
-            win32.mouse_event(
-                win32.MOUSEEVENTF_LEFTUP | win32.MOUSEEVENTF_ABSOLUTE,
-                Utils.TranslateCoordToAbsolute(currPos.X, this.ScreenWidth),
-                Utils.TranslateCoordToAbsolute(currPos.Y, this.ScreenHeight),
-                0,
-                0);
+            this.monitor3fOnTrackpad.Stop();
+            win32.mouse_event(win32.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
 
             this.dragEndConfidence = 0;
             this.prevTrackpadX = 0;
@@ -188,13 +161,13 @@ namespace tfd
             this.timeSincePrev3fTouchWatch.Reset();
         }
 
-        private void CheckIfThreeFingersStillOnTrackpadHandler(object sender, ElapsedEventArgs e)
+        private void CheckIf3fOnTrackpadHandler(object sender, ElapsedEventArgs e)
         {
             if (this.timeSincePrev3fTouchWatch.IsRunning
-                && this.DragEndMillisecondsThreshold * TimeSpan.TicksPerMillisecond < this.timeSincePrev3fTouchWatch.ElapsedTicks)
+                && this.timeSincePrev3fTouchWatch.ElapsedTicks > this.DragEndMillisecondsThreshold * TimeSpan.TicksPerMillisecond)
             {
                 this.StopDrag();
-                this.logger.Debug("3 fingers left trackpad, stopped drag");
+                this.Logger.Debug("3 fingers left trackpad, stop drag");
             }
         }
     }

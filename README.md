@@ -1,34 +1,33 @@
 # ThreeFingerDrag
 
-### **This project imitates macOS three finger drag experience on Windows trackpads.**
-- You can start drag (ie. **'mouse click down + drag'**) by just dragging three fingers over your trackpad.
-- When your fingers reach end of trackpad, **lift and re-place three fingers** elsewhere to continue dragging.
-- The drag ends (ie. **'mouse click up'**), immediately, if you start another gesture, or lift fingers from trackpad for an extended time.
-- This allows select-dragging with only one hand, and virtually unlimited trackpad space.
+### This project imitates macOS three finger drag experience on Windows trackpads
+- You can initiate a drag by just dragging three fingers on your trackpad.
+- When your fingers reach the edge of the trackpad, <ins>*lift and re-place three fingers*</ins> in center to continue dragging.
+- The drag ends, immediately, if you start another gesture, or after few seconds, when your fingers leave the trackpad.
+- This allows dragging a file or window with just one hand.
 
-## Building code
-1. Open `src/tfd.sln`
-2. Build away! 🛠️ (Ctrl+B / Ctrl+Shift+B)
+## Building code 🛠️
+1. Open `src/tfd.sln` in Visual Studio.
+2. Press **Ctrl+B / Ctrl+Shift+B** to build code.
 
-## How do I run it?
-#### Download and run `tfd.exe`, *"It just works."*
-- But on a serious note, there are settings you can configure to make your experience more comfortable. So keep reading...
+## How do I run the app?
+Download and run `tfd.exe` or build the code and run the app.
 
-- **You'll also need to disable other three finger gestures in windows trackpad settings.**
+### Notes:
+- You'll also need to disable other three finger gestures in windows trackpad settings
+    <img width="555" alt="paint-clip" src="https://user-images.githubusercontent.com/3400083/204067942-55fb5923-6101-4580-8916-35dce32fbe6a.png" />
 
-    <img width="555" alt="paint-clip" src="https://user-images.githubusercontent.com/3400083/204067942-55fb5923-6101-4580-8916-35dce32fbe6a.png">
+- You'll need to run `tfd.exe` as administrator, if you want to drag other programs that run as administrator (ex. Task Manager)
 
-- **You'll need to run `tfd.exe` as administrator, if you want to drag other programs that run as administrator.**
-
-    ![image](https://user-images.githubusercontent.com/3400083/203868101-65520672-44e3-4e50-a69c-15585f23da7b.png)
+    <img src="https://user-images.githubusercontent.com/3400083/203868101-65520672-44e3-4e50-a69c-15585f23da7b.png" />
 
 
-## Customize settings
-You can set environment variables to change drag behavior in various ways (ex. drag speed multiplier, velocity, etc.).
+## Customize Settings 
+You can set various environment variables to change drag behavior (ex. drag speed multiplier, velocity).
 
-The simplest way to achieve this is with a powershell script.
+The easiest way to configure this is using powershell script that runs `tfd.exe` app.
 
-Ex. Create file named `tfd.ps1` with below contents:
+Ex. Create powershell script named `tfd.ps1` with below contents:
 ```
 # auto run as admin, if started from non-admin shell
 if (-not(([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]"Administrator")))

@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace tfd
 {
-    /// below code & structs referenced taken from https://github.com/emoacht/RawInput.Touchpad
+    /// below code & structs referenced from https://github.com/emoacht/RawInput.Touchpad
 
     internal struct TrackpadContact
     {
@@ -190,7 +190,7 @@ namespace tfd
                 }
 
                 ushort valueCapsLength = caps.NumberInputValueCaps;
-                var valueCaps = new win32.HIDP_VALUE_CAPS[valueCapsLength];
+                win32.HIDP_VALUE_CAPS[] valueCaps = new win32.HIDP_VALUE_CAPS[valueCapsLength];
 
                 if (win32.HidP_GetValueCaps(
                     win32.HIDP_REPORT_TYPE.HidP_Input,
@@ -203,6 +203,7 @@ namespace tfd
 
                 // Usage Page and ID in Windows Precision Touchpad input reports
                 // https://docs.microsoft.com/en-us/windows-hardware/design/component-guidelines/windows-precision-touchpad-required-hid-top-level-collections#windows-precision-touchpad-input-reports
+                // https://learn.microsoft.com/en-us/windows-hardware/design/component-guidelines/touchpad-windows-precision-touchpad-collection
                 uint hidStatus = win32.HidP_GetUsageValue(
                         win32.HIDP_REPORT_TYPE.HidP_Input,
                         0x0D,
@@ -220,7 +221,7 @@ namespace tfd
 
                 for (int i = 0, contactIdx = 0; i < valueCaps.Length; ++i)
                 {
-                    var valueCap = valueCaps[i];
+                    win32.HIDP_VALUE_CAPS valueCap = valueCaps[i];
                     if (valueCap.LinkCollection == 0) continue;
 
                     if (win32.HidP_GetUsageValue(

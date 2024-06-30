@@ -15,7 +15,10 @@ namespace tfd
         [STAThread]
         public static void Main()
         {
-            win32.SetProcessDPIAware();
+            /// corrects absolute coordinate translation when diff. scaling than 1x is applied
+            /// makes `win32.GetSystemMetrics(win32.SM_CXSCREEN)` correct correct resolution
+            bool IsProcessDPIAware = Program.appContext.LoadEnvVar(nameof(IsProcessDPIAware), false);
+            if (IsProcessDPIAware) win32.SetProcessDPIAware();
 
             Program.trayIcon = new NotifyIcon()
             {
