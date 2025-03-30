@@ -5,7 +5,7 @@ namespace tfd
 {
     public partial class win32
     {
-        //https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-mouse_event#:~:text=button%20is%20up.-,MOUSEEVENTF_MOVE,-0x0001
+        /// https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-mouse_event#:~:text=button%20is%20up.-,MOUSEEVENTF_MOVE,-0x0001
         public const int MOUSEEVENTF_MOVE = 0x0001;
         public const int MOUSEEVENTF_LEFTDOWN = 0x0002;
         public const int MOUSEEVENTF_LEFTUP = 0x0004;
@@ -14,11 +14,6 @@ namespace tfd
         public const int MOUSEEVENTF_ABSOLUTE = 0x8000;
         [DllImport("user32", SetLastError = true)]
         public static extern void mouse_event(int dwFlags, int dx, int dy, int dwData, int dwExtraInfo);
-
-        public static int SM_CXSCREEN = 0;
-        public static int SM_CYSCREEN = 1;
-        [DllImport("user32", SetLastError = true)]
-        public static extern int GetSystemMetrics(int nIndex);
 
         /// https://stackoverflow.com/questions/2416748/how-do-you-simulate-mouse-click-in-c
         [StructLayout(LayoutKind.Sequential)]
@@ -30,14 +25,36 @@ namespace tfd
         [DllImport("user32", SetLastError = true)]
         public static extern bool GetCursorPos(out MousePoint lpMousePoint);
 
+        public static int SM_CXSCREEN = 0;
+        public static int SM_CYSCREEN = 1;
+        [DllImport("user32", SetLastError = true)]
+        public static extern int GetSystemMetrics(int nIndex);
+
         [DllImport("user32", SetLastError = true)]
         public static extern bool SetProcessDPIAware();
+
+        public delegate int WindowHookDelegate(int code, int wParam, IntPtr lParam);
+
+        [DllImport("user32", SetLastError = true)]
+        public static extern IntPtr SetWindowsHookEx(int idHook, WindowHookDelegate callback, IntPtr hInstance, uint threadId);
+
+        [DllImport("kernel32", SetLastError = true)]
+        public static extern IntPtr LoadLibrary(string lpFileName);
+
+        [DllImport("user32", SetLastError = true)]
+        public static extern bool UnhookWindowsHookEx(IntPtr hInstance);
+
+        [DllImport("user32", SetLastError = true)]
+        public static extern int CallNextHookEx(IntPtr idHook, int nCode, int wParam, IntPtr lParam);
     }
 
     public partial class win32
     {
         public const int WS_EX_TOOLWINDOW = 0x80;
+        public const int WH_MOUSE_LL = 14;
         public const int WM_INPUT = 0x00FF;
+        public const int WM_LBUTTONDOWN = 0x0201;
+        public const int WM_LBUTTONUP = 0x0202;
         public const int RIM_INPUT = 0;
         public const int RIM_INPUTSINK = 1;
 

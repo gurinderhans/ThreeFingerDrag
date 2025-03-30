@@ -44,9 +44,8 @@ namespace tfd
             this.monitor3fOnTrackpad.Elapsed += this.CheckIf3fOnTrackpadHandler;
         }
 
-        public void ProcessTouch(IntPtr lParam)
+        public void ProcessTouch(TrackpadContact[] contacts)
         {
-            TrackpadContact[] contacts = TrackpadHelper.ParseInput(lParam);
             if (contacts == null || contacts.Length == 0) return;
 
             /// calculate avg. location of all three contacts

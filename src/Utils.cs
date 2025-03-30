@@ -11,7 +11,7 @@ namespace tfd
 
         public static int TranslateCoordToAbsolute(int coord, int width_or_height)
         {
-            ///https://github.com/Lexikos/AutoHotkey_L/blob/master/source/keyboard_mouse.cpp#L2545
+            /// https://github.com/Lexikos/AutoHotkey_L/blob/master/source/keyboard_mouse.cpp#L2545
             return (((65536 * coord) / width_or_height) + (coord < 0 ? -1 : 1));
         }
     }
