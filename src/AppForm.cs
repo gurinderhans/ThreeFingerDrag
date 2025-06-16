@@ -49,7 +49,7 @@ namespace tfd
             if (m.Msg == win32.WM_INPUT)
             {
                 TrackpadContact[] contacts = TrackpadHelper.ParseInput(m.LParam);
-                this.trackpadBlockManager?.ProcessTouch(contacts);
+                //this.trackpadBlockManager?.ProcessTouch(contacts);
                 this.tfDragManager?.ProcessTouch(contacts);
             }
 
