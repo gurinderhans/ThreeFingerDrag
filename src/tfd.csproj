@@ -71,7 +71,6 @@
   <ItemGroup>
     <Compile Include="Context.cs" />
     <Compile Include="TrackpadHelper.cs" />
-    <Compile Include="TrackpadBlockManager.cs" />
     <Compile Include="Utils.cs" />
     <Compile Include="AppForm.cs">
       <SubType>Form</SubType>

@@ -1,11 +1,11 @@
-﻿using System;
-using System.Runtime.InteropServices;
-
-namespace tfd
+﻿namespace tfd
 {
+    using System;
+    using System.Runtime.InteropServices;
+
     public partial class win32
     {
-        /// https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-mouse_event#:~:text=button%20is%20up.-,MOUSEEVENTF_MOVE,-0x0001
+        //https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-mouse_event#:~:text=button%20is%20up.-,MOUSEEVENTF_MOVE,-0x0001
         public const int MOUSEEVENTF_MOVE = 0x0001;
         public const int MOUSEEVENTF_LEFTDOWN = 0x0002;
         public const int MOUSEEVENTF_LEFTUP = 0x0004;
@@ -15,7 +15,7 @@ namespace tfd
         [DllImport("user32", SetLastError = true)]
         public static extern void mouse_event(int dwFlags, int dx, int dy, int dwData, int dwExtraInfo);
 
-        /// https://stackoverflow.com/questions/2416748/how-do-you-simulate-mouse-click-in-c
+        //https://stackoverflow.com/questions/2416748/how-do-you-simulate-mouse-click-in-c
         [StructLayout(LayoutKind.Sequential)]
         public struct MousePoint
         {

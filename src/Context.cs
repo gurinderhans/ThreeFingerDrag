@@ -1,21 +1,19 @@
-﻿using System;
-
-namespace tfd
+﻿namespace tfd
 {
+    using System;
+
     public interface IContext
     {
         ILogger GetLogger();
+
         T LoadEnvVar<T>(string envVarName, T defaultValue);
     }
 
     public class Context : IContext
     {
-        public readonly Logger Logger = new Logger();
+        protected readonly ILogger Logger;
 
-        public Context()
-        {
-            this.Logger.RecordDebugLogs = this.LoadEnvVar(nameof(this.Logger.RecordDebugLogs), false);
-        }
+        public Context(ILogger logger) => this.Logger = logger;
 
         public ILogger GetLogger() => this.Logger;
 

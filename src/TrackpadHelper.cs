@@ -1,10 +1,10 @@
-﻿using System;
-using System.Linq;
-using System.Runtime.InteropServices;
-
-namespace tfd
+﻿namespace tfd
 {
-    /// below code & structs referenced from https://github.com/emoacht/RawInput.Touchpad
+    using System;
+    using System.Linq;
+    using System.Runtime.InteropServices;
+
+    //below code & structs referenced from https://github.com/emoacht/RawInput.Touchpad
     public struct TrackpadContact
     {
         public int Id { get; }
@@ -95,8 +95,8 @@ namespace tfd
 
         public static bool RegisterTrackpad(IntPtr hWnd)
         {
-            /// Precision Touchpad (PTP) in HID Clients Supported in Windows
-            /// https://docs.microsoft.com/en-us/windows-hardware/drivers/hid/hid-architecture#hid-clients-supported-in-windows
+            //Precision Touchpad (PTP) in HID Clients Supported in Windows
+            //https://docs.microsoft.com/en-us/windows-hardware/drivers/hid/hid-architecture#hid-clients-supported-in-windows
             win32.RAWINPUTDEVICE trackpadDevice = new win32.RAWINPUTDEVICE
             {
                 usUsagePage = 0x0D,
@@ -200,9 +200,9 @@ namespace tfd
                     return null;
                 }
 
-                /// Usage Page and ID in Windows Precision Touchpad input reports
-                /// https://docs.microsoft.com/en-us/windows-hardware/design/component-guidelines/windows-precision-touchpad-required-hid-top-level-collections#windows-precision-touchpad-input-reports
-                /// https://learn.microsoft.com/en-us/windows-hardware/design/component-guidelines/touchpad-windows-precision-touchpad-collection
+                //Usage Page and ID in Windows Precision Touchpad input reports
+                //https://docs.microsoft.com/en-us/windows-hardware/design/component-guidelines/windows-precision-touchpad-required-hid-top-level-collections#windows-precision-touchpad-input-reports
+                //https://learn.microsoft.com/en-us/windows-hardware/design/component-guidelines/touchpad-windows-precision-touchpad-collection
                 uint hidStatus = win32.HidP_GetUsageValue(
                         win32.HIDP_REPORT_TYPE.HidP_Input,
                         0x0D,

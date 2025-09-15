@@ -1,13 +1,13 @@
-﻿using System.Drawing;
-using System.Windows.Forms;
-
-namespace tfd
+﻿namespace tfd
 {
+    using System.Drawing;
+    using System.Windows.Forms;
+
     public partial class AppForm : Form
     {
         protected override CreateParams CreateParams
         {
-            /// https://www.csharp411.com/hide-form-from-alttab/
+            //https://www.csharp411.com/hide-form-from-alttab/
             get
             {
                 CreateParams cp = base.CreateParams;
@@ -17,13 +17,11 @@ namespace tfd
         }
 
         private readonly ILogger Logger;
-        private readonly TrackpadBlockManager trackpadBlockManager;
         private readonly ThreeFingerDragManager tfDragManager;
 
         public AppForm(IContext context)
         {
-            InitializeComponent();
-
+            this.InitializeComponent();
             this.Load += (s, e) => this.Size = Size.Empty;
             this.WindowState = FormWindowState.Minimized;
             this.FormBorderStyle = FormBorderStyle.None;
@@ -31,16 +29,12 @@ namespace tfd
             this.Opacity = 0;
             this.Logger = context.GetLogger();
 
-            bool EnableBlockTrackpadBorders = context.LoadEnvVar(nameof(EnableBlockTrackpadBorders), true);
-            bool EnableThreeFingerDrag = context.LoadEnvVar(nameof(EnableThreeFingerDrag), true);
-
-            if (EnableBlockTrackpadBorders || EnableThreeFingerDrag)
+            bool tfd_EnableThreeFingerDrag = context.LoadEnvVar(nameof(tfd_EnableThreeFingerDrag), true);
+            if (tfd_EnableThreeFingerDrag)
             {
+                this.tfDragManager = new ThreeFingerDragManager(context);
                 bool registeredTrackpad = TrackpadHelper.RegisterTrackpad(this.Handle);
                 this.Logger.Info($"registered trackpad={registeredTrackpad}");
-
-                if (EnableThreeFingerDrag) this.tfDragManager = new ThreeFingerDragManager(context);
-                if (EnableBlockTrackpadBorders) this.trackpadBlockManager = new TrackpadBlockManager(context);
             }
         }
 
@@ -49,7 +43,6 @@ namespace tfd
             if (m.Msg == win32.WM_INPUT)
             {
                 TrackpadContact[] contacts = TrackpadHelper.ParseInput(m.LParam);
-                this.trackpadBlockManager?.ProcessTouch(contacts);
                 this.tfDragManager?.ProcessTouch(contacts);
             }
 

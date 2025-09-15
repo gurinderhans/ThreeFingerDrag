@@ -1,8 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace tfd
+﻿namespace tfd
 {
+    using System;
+    using System.Collections.Generic;
+
     public interface ILogger
     {
         void Info(string text);
@@ -12,32 +12,36 @@ namespace tfd
 
     public class Logger : ILogger
     {
-        public bool RecordDebugLogs { get; set; }
+        private List<string> logs = new List<string>();
 
-        protected List<string> Logs = new List<string>();
+        private readonly bool recordDebugLogs;
 
-        public void Clear() => this.Logs.Clear();
+        public Logger(bool recordDebugLogs) => this.recordDebugLogs = recordDebugLogs;
+
+        public void Clear() => this.logs.Clear();
         public void Info(string text) => this.Log("Info", text);
         public void Error(string text) => this.Log("Error", text);
+        public void Debug(string text) => this.Log("Debug", text);
 
-        public void Debug(string text)
+        private void Log(string type, string text)
         {
-            if (this.RecordDebugLogs)
+            string logText = $"[{DateTime.UtcNow:hh:mm:ss.fff tt}][{type}][{text}]";
+            if (this.recordDebugLogs)
             {
-                this.Log("Debug", text);
-                System.Diagnostics.Debug.WriteLine(text);
+                System.Diagnostics.Debug.WriteLine(logText);
+                this.logs.Add(logText);
+            }
+            else if (type != "Debug")
+            {
+                this.logs.Add(logText);
             }
         }
 
         public string GetLogsAsString()
         {
-            if (this.Logs.Count <= 0) return "<no logs>";
-            return string.Join(Environment.NewLine, this.Logs);
-        }
-
-        private void Log(string type, string text)
-        {
-            this.Logs.Add($"[{DateTime.UtcNow:hh:mm:ss.fff tt}][{type}][{text}]");
+            return this.logs.Count == 0
+                ? "<no logs>"
+                : string.Join(Environment.NewLine, this.logs);
         }
     }
 }
