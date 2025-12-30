@@ -1,4 +1,4 @@
-﻿namespace tfd
+﻿namespace tpb
 {
     using System;
     using System.Collections.Generic;
@@ -34,7 +34,7 @@
         private void Log(string type, string text)
         {
             string logText = $"[{DateTime.UtcNow:hh:mm:ss.fff tt}][{type}][{new StackFrame(2).GetMethod().Name}][{text}]";
-            if (EnvConfig.tfd_EnableDebugMode)
+            if (EnvConfig.tpb_EnableDebugMode)
             {
                 System.Diagnostics.Debug.WriteLine(logText);
                 this.logs.Add(logText);

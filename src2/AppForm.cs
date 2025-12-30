@@ -1,4 +1,4 @@
-﻿namespace tfd
+﻿namespace tpb
 {
     using System.Drawing;
     using System.Windows.Forms;
@@ -16,7 +16,7 @@
             }
         }
 
-        private readonly ThreeFingerDragManager tfDragManager;
+        private readonly TrackpadBlockManager tpBlockManager;
 
         public AppForm()
         {
@@ -27,9 +27,9 @@
             this.ShowInTaskbar = false;
             this.Opacity = 0;
 
-            if (EnvConfig.tfd_EnableThreeFingerDrag)
+            if (EnvConfig.tpb_EnableTrackpadBlock)
             {
-                this.tfDragManager = new ThreeFingerDragManager();
+                this.tpBlockManager = new TrackpadBlockManager();
                 bool registeredTrackpad = TrackpadHelper.RegisterTrackpad(this.Handle);
                 Logger.Instance.Info($"registered trackpad={registeredTrackpad}");
             }
@@ -40,7 +40,7 @@
             if (m.Msg == win32.WM_INPUT)
             {
                 TrackpadContact[] contacts = TrackpadHelper.ParseInput(m.LParam);
-                this.tfDragManager?.ProcessTouch(contacts);
+                this.tpBlockManager?.ProcessTouch(contacts);
             }
 
             base.WndProc(ref m);

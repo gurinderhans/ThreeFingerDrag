@@ -1,6 +1,6 @@
-namespace tfd
+namespace tpb
 {
-    using tfd.Properties;
+    using tpb.Properties;
     using System;
     using System.Windows.Forms;
 
@@ -15,7 +15,7 @@ namespace tfd
 
             //corrects absolute coordinate translation when diff. scaling than 1x is applied
             //makes `win32.GetSystemMetrics(win32.SM_CXSCREEN)` correct correct resolution
-            if (EnvConfig.tfd_IsProcessDPIAware) win32.SetProcessDPIAware();
+            if (EnvConfig.tpb_IsProcessDPIAware) win32.SetProcessDPIAware();
 
             Program.trayIcon = new NotifyIcon()
             {
