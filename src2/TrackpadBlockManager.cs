@@ -45,41 +45,49 @@
 
         public void ProcessTouch(TrackpadContact[] contacts)
         {
-            if (contacts == null || contacts.Length != 1)
+            if (contacts == null || contacts.Length > 2)
             {
                 this.shouldBlockTrackpad = false;
                 return;
             }
 
-            TrackpadContact currPos = contacts[0];
+            //todo: log second finger
+            //if (EnvConfig.tpb_EnableDetailedTrackpadLogging)
+            //{
+            //    Logger.Instance.Debug($"trackpad curr pos= x:{currPos.X}, y:{currPos.Y}");
+            //}
 
-            if (EnvConfig.tpb_EnableDetailedTrackpadLogging)
+            //if (first and second are on opposite sides of trackpad and outside bounds, assume no scroll gesture and block)
+            //remainng logic should stay same if only one touch detected
+
+            TrackpadContact firstPos = contacts[0];
+            if (contacts.Length == 2)
             {
-                Logger.Instance.Debug($"trackpad curr pos= x:{currPos.X}, y:{currPos.Y}");
+                TrackpadContact secondPos = contacts[1];
             }
 
-            if (this.firstTrackpadContact == null)
-            {
-                this.firstTrackpadContact = currPos;
-                this.monitor1fOnTrackpad.Start();
-                return;
-            }
+            //if (this.firstTrackpadContact == null)
+            //{
+            //    this.firstTrackpadContact = firstPos;
+            //    this.monitor1fOnTrackpad.Start();
+            //    return;
+            //}
 
-            //rules:
-            //- first outside && curr inside => allow + update first to inside
-            //- first inside && curr inside => allow
-            //- first inside && curr outside => allow
-            //- first outside && curr outside => disallow
-            bool firstInside = Utils.IsPointInPolygon(this.firstTrackpadContact.Value.X, this.firstTrackpadContact.Value.Y, EnvConfig.tpb_TouchBoundsPolygon);
-            bool currInside = Utils.IsPointInPolygon(currPos.X, currPos.Y, EnvConfig.tpb_TouchBoundsPolygon);
-            if (!firstInside && currInside)
-            {
-                this.firstTrackpadContact = currPos;
-            }
+            ////rules:
+            ////- first outside && curr inside => allow + update first to inside
+            ////- first inside && curr inside => allow
+            ////- first inside && curr outside => allow
+            ////- first outside && curr outside => disallow
+            //bool firstInside = Utils.IsPointInPolygon(this.firstTrackpadContact.Value.X, this.firstTrackpadContact.Value.Y, EnvConfig.tpb_TouchBoundsPolygon);
+            //bool currInside = Utils.IsPointInPolygon(firstPos.X, firstPos.Y, EnvConfig.tpb_TouchBoundsPolygon);
+            //if (!firstInside && currInside)
+            //{
+            //    this.firstTrackpadContact = firstPos;
+            //}
 
-            this.shouldBlockTrackpad = !firstInside && !currInside;
-            Logger.Instance.Debug($"trackpad, first={firstInside}, curr={currInside}, shouldBlock={this.shouldBlockTrackpad}");
-            this.timeSincePrev1fTouchWatch.Restart();
+            //this.shouldBlockTrackpad = !firstInside && !currInside;
+            //Logger.Instance.Debug($"trackpad, first={firstInside}, curr={currInside}, shouldBlock={this.shouldBlockTrackpad}");
+            //this.timeSincePrev1fTouchWatch.Restart();
         }
 
         private void CheckIf1fOnTrackpadHandler(object sender, ElapsedEventArgs e)

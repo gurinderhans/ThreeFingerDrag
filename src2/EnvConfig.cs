@@ -10,8 +10,8 @@
         public static bool tpb_EnableDetailedTrackpadLogging { get; private set; }
         public static bool tpb_EnableTrackpadBlock { get; private set; }
         public static bool tpb_IsProcessDPIAware { get; private set; }
-        public static Point[] tpb_TouchBoundsPolygon { get; private set; }
         public static long tpb_DragEndMillisecondsThreshold { get; private set; }
+        public static Point[] tpb_TouchBoundsPolygon { get; private set; }
 
         public static void LoadVariables()
         {
@@ -19,8 +19,10 @@
             EnvConfig.tpb_EnableDetailedTrackpadLogging = EnvConfig.LoadEnvVar(nameof(EnvConfig.tpb_EnableDetailedTrackpadLogging), false);
             EnvConfig.tpb_EnableTrackpadBlock = EnvConfig.LoadEnvVar(nameof(EnvConfig.tpb_EnableTrackpadBlock), true);
             EnvConfig.tpb_IsProcessDPIAware = EnvConfig.LoadEnvVar(nameof(EnvConfig.tpb_EnableTrackpadBlock), false);
-            EnvConfig.tpb_TouchBoundsPolygon = new JavaScriptSerializer().Deserialize<Point[]>(EnvConfig.LoadEnvVar(nameof(EnvConfig.tpb_TouchBoundsPolygon), string.Empty));
             EnvConfig.tpb_DragEndMillisecondsThreshold = EnvConfig.LoadEnvVar(nameof(EnvConfig.tpb_DragEndMillisecondsThreshold), 300);
+            EnvConfig.tpb_TouchBoundsPolygon =
+                new JavaScriptSerializer()
+                .Deserialize<Point[]>(EnvConfig.LoadEnvVar(nameof(EnvConfig.tpb_TouchBoundsPolygon), string.Empty));
         }
 
         private static T LoadEnvVar<T>(string varName, T defaultValue)
