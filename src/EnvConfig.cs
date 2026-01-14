@@ -23,29 +23,30 @@
 
         public static void LoadVariables()
         {
-            EnvConfig.tfd_EnableDebugMode = EnvConfig.LoadEnvVar(nameof(EnvConfig.tfd_EnableDebugMode), false);
-            EnvConfig.tfd_IsProcessDPIAware = EnvConfig.LoadEnvVar(nameof(EnvConfig.tfd_IsProcessDPIAware), false);
-            EnvConfig.tfd_EnableThreeFingerDrag = EnvConfig.LoadEnvVar(nameof(tfd_EnableThreeFingerDrag), true);
-            EnvConfig.tfd_DragSpeedMultiplier = EnvConfig.LoadEnvVar(nameof(EnvConfig.tfd_DragSpeedMultiplier), 1f);
-            EnvConfig.tfd_DragVelocityLowerBoundX = EnvConfig.LoadEnvVar(nameof(EnvConfig.tfd_DragVelocityLowerBoundX), 1f);
-            EnvConfig.tfd_DragVelocityUpperBoundX = EnvConfig.LoadEnvVar(nameof(EnvConfig.tfd_DragVelocityUpperBoundX), 1f);
-            EnvConfig.tfd_DragVelocityLowerBoundY = EnvConfig.LoadEnvVar(nameof(EnvConfig.tfd_DragVelocityLowerBoundY), 1f);
-            EnvConfig.tfd_DragVelocityUpperBoundY = EnvConfig.LoadEnvVar(nameof(EnvConfig.tfd_DragVelocityUpperBoundY), 1f);
-            EnvConfig.tfd_DragStartFingersDistThresholdMultiplier = EnvConfig.LoadEnvVar(nameof(EnvConfig.tfd_DragStartFingersDistThresholdMultiplier), 3f);
-            EnvConfig.tfd_DragEndOnNewGestureMinDist = EnvConfig.LoadEnvVar(nameof(EnvConfig.tfd_DragEndOnNewGestureMinDist), 0f);
-            EnvConfig.tfd_DragEndOnNewGestureMaxDist = EnvConfig.LoadEnvVar(nameof(EnvConfig.tfd_DragEndOnNewGestureMaxDist), 100f);
-            EnvConfig.tfd_DragEndMillisecondsThreshold = EnvConfig.LoadEnvVar(nameof(EnvConfig.tfd_DragEndMillisecondsThreshold), 1000);
-            EnvConfig.tfd_DragEndConfidenceThreshold = EnvConfig.LoadEnvVar(nameof(EnvConfig.tfd_DragEndConfidenceThreshold), 5);
-            EnvConfig.tfd_TrackpadCoordsScaleFactor = EnvConfig.LoadEnvVar<int?>(nameof(EnvConfig.tfd_TrackpadCoordsScaleFactor), null);
-            EnvConfig.tfd_TimeSinceLast3fTouchMinMillis = EnvConfig.LoadEnvVar(nameof(EnvConfig.tfd_TimeSinceLast3fTouchMinMillis), 50);
-            EnvConfig.tfd_Monitor3fOnTrackpadInterval = EnvConfig.LoadEnvVar(nameof(EnvConfig.tfd_Monitor3fOnTrackpadInterval), 100);
+            EnvConfig.tfd_EnableDebugMode = EnvConfig.LoadEnvVar<bool>(nameof(EnvConfig.tfd_EnableDebugMode));
+            EnvConfig.tfd_IsProcessDPIAware = EnvConfig.LoadEnvVar<bool>(nameof(EnvConfig.tfd_IsProcessDPIAware));
+            EnvConfig.tfd_EnableThreeFingerDrag = EnvConfig.LoadEnvVar<bool>(nameof(tfd_EnableThreeFingerDrag));
+            EnvConfig.tfd_DragSpeedMultiplier = EnvConfig.LoadEnvVar<double>(nameof(EnvConfig.tfd_DragSpeedMultiplier));
+            EnvConfig.tfd_DragVelocityLowerBoundX = EnvConfig.LoadEnvVar<double>(nameof(EnvConfig.tfd_DragVelocityLowerBoundX));
+            EnvConfig.tfd_DragVelocityUpperBoundX = EnvConfig.LoadEnvVar<double>(nameof(EnvConfig.tfd_DragVelocityUpperBoundX));
+            EnvConfig.tfd_DragVelocityLowerBoundY = EnvConfig.LoadEnvVar<double>(nameof(EnvConfig.tfd_DragVelocityLowerBoundY));
+            EnvConfig.tfd_DragVelocityUpperBoundY = EnvConfig.LoadEnvVar<double>(nameof(EnvConfig.tfd_DragVelocityUpperBoundY));
+            EnvConfig.tfd_DragStartFingersDistThresholdMultiplier = EnvConfig.LoadEnvVar<double>(nameof(EnvConfig.tfd_DragStartFingersDistThresholdMultiplier));
+            EnvConfig.tfd_DragEndOnNewGestureMinDist = EnvConfig.LoadEnvVar<double>(nameof(EnvConfig.tfd_DragEndOnNewGestureMinDist));
+            EnvConfig.tfd_DragEndOnNewGestureMaxDist = EnvConfig.LoadEnvVar<double>(nameof(EnvConfig.tfd_DragEndOnNewGestureMaxDist));
+            EnvConfig.tfd_DragEndMillisecondsThreshold = EnvConfig.LoadEnvVar<long>(nameof(EnvConfig.tfd_DragEndMillisecondsThreshold));
+            EnvConfig.tfd_DragEndConfidenceThreshold = EnvConfig.LoadEnvVar<int>(nameof(EnvConfig.tfd_DragEndConfidenceThreshold));
+            EnvConfig.tfd_TrackpadCoordsScaleFactor = EnvConfig.LoadEnvVar<int?>(nameof(EnvConfig.tfd_TrackpadCoordsScaleFactor));
+            EnvConfig.tfd_TimeSinceLast3fTouchMinMillis = EnvConfig.LoadEnvVar<int>(nameof(EnvConfig.tfd_TimeSinceLast3fTouchMinMillis));
+            EnvConfig.tfd_Monitor3fOnTrackpadInterval = EnvConfig.LoadEnvVar<int>(nameof(EnvConfig.tfd_Monitor3fOnTrackpadInterval));
         }
 
-        private static T LoadEnvVar<T>(string varName, T defaultValue)
+        private static T LoadEnvVar<T>(string varName)
         {
             string rawValue = Environment.GetEnvironmentVariable(varName);
-            if (rawValue == null)
+            if (string.IsNullOrEmpty(rawValue))
             {
+                T defaultValue = default;
                 Logger.Instance.Info($"env set default, {varName}={defaultValue}");
                 return defaultValue;
             }
