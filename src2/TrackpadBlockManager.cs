@@ -1,6 +1,7 @@
 ﻿namespace tpb
 {
     using System;
+    using System.Collections.Generic;
     using System.Diagnostics;
     using System.Timers;
 
@@ -14,7 +15,7 @@
         private readonly IntPtr trackpadHookHandle = IntPtr.Zero;
 
         private bool shouldBlockTrackpad;
-        private TrackpadContact? firstTrackpadContact;
+        private List<TrackpadContact> initialTouches = new List<TrackpadContact>();
 
         public TrackpadBlockManager()
         {
@@ -43,6 +44,12 @@
             return this.shouldBlockTrackpad;
         }
 
+        /* touch block rules:
+         * > initial outside && curr inside => allow + update initial to inside
+         * > initial inside && curr inside => allow
+         * > initial inside && curr outside => allow
+         * > initial outside && curr outside => block
+         */
         public void ProcessTouch(TrackpadContact[] contacts)
         {
             if (contacts == null || contacts.Length > 2)
@@ -53,41 +60,60 @@
 
             //todo: log second finger
             //if (EnvConfig.tpb_EnableDetailedTrackpadLogging)
-            //{
             //    Logger.Instance.Debug($"trackpad curr pos= x:{currPos.X}, y:{currPos.Y}");
-            //}
+            //if first and second touches are on opposite sides of trackpad and outside bounds, assume no scroll gesture and block trackpad
+            //remaining logic stays same if only single touch detected
 
-            //if (first and second are on opposite sides of trackpad and outside bounds, assume no scroll gesture and block)
-            //remainng logic should stay same if only one touch detected
-
-            TrackpadContact firstPos = contacts[0];
-            if (contacts.Length == 2)
+            if (this.initialTouches.Count != contacts.Length)
             {
-                TrackpadContact secondPos = contacts[1];
+                this.initialTouches = new List<TrackpadContact>(contacts);
+                if (!this.monitor1fOnTrackpad.Enabled)
+                {
+                    this.monitor1fOnTrackpad.Start();
+                }
+
+                return;
             }
 
-            //if (this.firstTrackpadContact == null)
-            //{
-            //    this.firstTrackpadContact = firstPos;
-            //    this.monitor1fOnTrackpad.Start();
-            //    return;
-            //}
+            // todo: simplify by combining below duplicated logic
+            TrackpadContact currFirstTouch = contacts[0];
+            if (contacts.Length == 1)
+            {
+                bool initialOutside = !Utils.IsPointInPolygon(this.initialTouches[0].X, this.initialTouches[0].Y, EnvConfig.tpb_TouchBoundsPolygon);
+                bool currOutside = !Utils.IsPointInPolygon(currFirstTouch.X, currFirstTouch.Y, EnvConfig.tpb_TouchBoundsPolygon);
+                if (initialOutside && !currOutside)
+                {
+                    this.initialTouches = new List<TrackpadContact>(contacts);
+                }
 
-            ////rules:
-            ////- first outside && curr inside => allow + update first to inside
-            ////- first inside && curr inside => allow
-            ////- first inside && curr outside => allow
-            ////- first outside && curr outside => disallow
-            //bool firstInside = Utils.IsPointInPolygon(this.firstTrackpadContact.Value.X, this.firstTrackpadContact.Value.Y, EnvConfig.tpb_TouchBoundsPolygon);
-            //bool currInside = Utils.IsPointInPolygon(firstPos.X, firstPos.Y, EnvConfig.tpb_TouchBoundsPolygon);
-            //if (!firstInside && currInside)
-            //{
-            //    this.firstTrackpadContact = firstPos;
-            //}
+                this.shouldBlockTrackpad = initialOutside && currOutside;
+            }
+            else if (contacts.Length == 2)
+            {
+                TrackpadContact currSecondTouch = contacts[1];
 
-            //this.shouldBlockTrackpad = !firstInside && !currInside;
-            //Logger.Instance.Debug($"trackpad, first={firstInside}, curr={currInside}, shouldBlock={this.shouldBlockTrackpad}");
-            //this.timeSincePrev1fTouchWatch.Restart();
+                bool initialFirstOutside = !Utils.IsPointInPolygon(this.initialTouches[0].X, this.initialTouches[0].Y, EnvConfig.tpb_TouchBoundsPolygon);
+                bool initialSecondOutside = !Utils.IsPointInPolygon(this.initialTouches[1].X, this.initialTouches[1].Y, EnvConfig.tpb_TouchBoundsPolygon);
+                bool initialOutside = initialFirstOutside && initialSecondOutside;
+
+                bool currFirstOutside = !Utils.IsPointInPolygon(currFirstTouch.X, currFirstTouch.Y, EnvConfig.tpb_TouchBoundsPolygon);
+                bool currSecondOutside = !Utils.IsPointInPolygon(currSecondTouch.X, currSecondTouch.Y, EnvConfig.tpb_TouchBoundsPolygon);
+                bool currOutside = currFirstOutside && currSecondOutside;
+
+                if (initialOutside && !currOutside)
+                {
+                    this.initialTouches = new List<TrackpadContact>(contacts);
+                }
+
+                this.shouldBlockTrackpad = initialOutside && currOutside;
+            }
+
+            //todo: setup devbox laptop to work from it and test apps better
+            //todo: can likely decrease tpb_DragEndMillisecondsThreshold so we're not tracking prev. touch for too long, since don't need to keep drag down/etc like tfd
+            //      making it less should help track latest touches and better switching b/w single & double touches
+            if (!this.shouldBlockTrackpad) Console.WriteLine($"trackpad blocked ?= {this.shouldBlockTrackpad}");
+
+            this.timeSincePrev1fTouchWatch.Restart();
         }
 
         private void CheckIf1fOnTrackpadHandler(object sender, ElapsedEventArgs e)
@@ -95,7 +121,7 @@
             if (this.timeSincePrev1fTouchWatch.IsRunning
                 && this.timeSincePrev1fTouchWatch.ElapsedTicks > EnvConfig.tpb_DragEndMillisecondsThreshold * TimeSpan.TicksPerMillisecond)
             {
-                this.firstTrackpadContact = null;
+                this.initialTouches.Clear();
                 this.timeSincePrev1fTouchWatch.Reset();
                 this.monitor1fOnTrackpad.Stop();
                 Logger.Instance.Debug("1 finger left trackpad, stop");
