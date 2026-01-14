@@ -15,21 +15,30 @@
 
         public static void LoadVariables()
         {
-            EnvConfig.tpb_EnableDebugMode = EnvConfig.LoadEnvVar(nameof(EnvConfig.tpb_EnableDebugMode), false);
-            EnvConfig.tpb_EnableDetailedTrackpadLogging = EnvConfig.LoadEnvVar(nameof(EnvConfig.tpb_EnableDetailedTrackpadLogging), false);
-            EnvConfig.tpb_EnableTrackpadBlock = EnvConfig.LoadEnvVar(nameof(EnvConfig.tpb_EnableTrackpadBlock), true);
-            EnvConfig.tpb_IsProcessDPIAware = EnvConfig.LoadEnvVar(nameof(EnvConfig.tpb_EnableTrackpadBlock), false);
-            EnvConfig.tpb_DragEndMillisecondsThreshold = EnvConfig.LoadEnvVar(nameof(EnvConfig.tpb_DragEndMillisecondsThreshold), 300);
-            EnvConfig.tpb_TouchBoundsPolygon =
-                new JavaScriptSerializer()
-                .Deserialize<Point[]>(EnvConfig.LoadEnvVar(nameof(EnvConfig.tpb_TouchBoundsPolygon), string.Empty));
+            EnvConfig.tpb_EnableDebugMode = EnvConfig.LoadEnvVar<bool>(nameof(EnvConfig.tpb_EnableDebugMode));
+            EnvConfig.tpb_EnableDetailedTrackpadLogging = EnvConfig.LoadEnvVar<bool>(nameof(EnvConfig.tpb_EnableDetailedTrackpadLogging));
+            EnvConfig.tpb_EnableTrackpadBlock = EnvConfig.LoadEnvVar<bool>(nameof(EnvConfig.tpb_EnableTrackpadBlock));
+            EnvConfig.tpb_IsProcessDPIAware = EnvConfig.LoadEnvVar<bool>(nameof(EnvConfig.tpb_IsProcessDPIAware));
+            EnvConfig.tpb_DragEndMillisecondsThreshold = EnvConfig.LoadEnvVar<long>(nameof(EnvConfig.tpb_DragEndMillisecondsThreshold));
+            EnvConfig.tpb_TouchBoundsPolygon = EnvConfig.DeserializeJson<Point[]>(EnvConfig.LoadEnvVar<string>(nameof(EnvConfig.tpb_TouchBoundsPolygon)));
         }
 
-        private static T LoadEnvVar<T>(string varName, T defaultValue)
+        private static T DeserializeJson<T>(string jsonString)
+        {
+            if (string.IsNullOrEmpty(jsonString))
+            {
+                return default;
+            }
+
+            return new JavaScriptSerializer().Deserialize<T>(jsonString);
+        }
+
+        private static T LoadEnvVar<T>(string varName)
         {
             string rawValue = Environment.GetEnvironmentVariable(varName);
-            if (rawValue == null)
+            if (string.IsNullOrEmpty(rawValue))
             {
+                T defaultValue = default;
                 Logger.Instance.Info($"env set default, {varName}={defaultValue}");
                 return defaultValue;
             }
