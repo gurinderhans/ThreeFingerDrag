@@ -37,7 +37,7 @@
             int trackpadScaleFactor = EnvConfig.tfd_TrackpadCoordsScaleFactor ?? contacts.Length;
             trackpadX = Math.Ceiling(trackpadX / trackpadScaleFactor);
             trackpadY = Math.Ceiling(trackpadY / trackpadScaleFactor);
-            Logger.Instance.Debug($"trackpad coords, x:{trackpadX}, y:{trackpadY}");
+            Logger.Instance.Debug($"trackpad coords, x={trackpadX}, y={trackpadY}, scaleFactor={trackpadScaleFactor}");
 
             double deltaX = trackpadX - this.prevTrackpadX;
             double deltaY = trackpadY - this.prevTrackpadY;
